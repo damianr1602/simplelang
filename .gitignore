@@ -20,4 +20,4 @@ simplelang
 **/.antlr
 # logs
 **/log
-
+bin/pkg/*

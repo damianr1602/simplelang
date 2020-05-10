@@ -20,8 +20,14 @@ type simplerlangListener interface {
 	// EnterReadint is called when entering the readint production.
 	EnterReadint(c *ReadintContext)
 
+	// EnterIntarray is called when entering the intarray production.
+	EnterIntarray(c *IntarrayContext)
+
 	// EnterReaddouble is called when entering the readdouble production.
 	EnterReaddouble(c *ReaddoubleContext)
+
+	// EnterShowArrayElem is called when entering the showArrayElem production.
+	EnterShowArrayElem(c *ShowArrayElemContext)
 
 	// EnterSingle0 is called when entering the single0 production.
 	EnterSingle0(c *Single0Context)
@@ -44,6 +50,9 @@ type simplerlangListener interface {
 	// EnterInt is called when entering the int production.
 	EnterInt(c *IntContext)
 
+	// EnterAssignArrayElem is called when entering the assignArrayElem production.
+	EnterAssignArrayElem(c *AssignArrayElemContext)
+
 	// EnterReal is called when entering the real production.
 	EnterReal(c *RealContext)
 
@@ -55,6 +64,9 @@ type simplerlangListener interface {
 
 	// EnterPar is called when entering the par production.
 	EnterPar(c *ParContext)
+
+	// EnterArray_items is called when entering the array_items production.
+	EnterArray_items(c *Array_itemsContext)
 
 	// ExitProgram is called when exiting the program production.
 	ExitProgram(c *ProgramContext)
@@ -68,8 +80,14 @@ type simplerlangListener interface {
 	// ExitReadint is called when exiting the readint production.
 	ExitReadint(c *ReadintContext)
 
+	// ExitIntarray is called when exiting the intarray production.
+	ExitIntarray(c *IntarrayContext)
+
 	// ExitReaddouble is called when exiting the readdouble production.
 	ExitReaddouble(c *ReaddoubleContext)
+
+	// ExitShowArrayElem is called when exiting the showArrayElem production.
+	ExitShowArrayElem(c *ShowArrayElemContext)
 
 	// ExitSingle0 is called when exiting the single0 production.
 	ExitSingle0(c *Single0Context)
@@ -92,6 +110,9 @@ type simplerlangListener interface {
 	// ExitInt is called when exiting the int production.
 	ExitInt(c *IntContext)
 
+	// ExitAssignArrayElem is called when exiting the assignArrayElem production.
+	ExitAssignArrayElem(c *AssignArrayElemContext)
+
 	// ExitReal is called when exiting the real production.
 	ExitReal(c *RealContext)
 
@@ -103,4 +124,7 @@ type simplerlangListener interface {
 
 	// ExitPar is called when exiting the par production.
 	ExitPar(c *ParContext)
+
+	// ExitArray_items is called when exiting the array_items production.
+	ExitArray_items(c *Array_itemsContext)
 }
