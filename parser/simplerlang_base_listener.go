@@ -117,6 +117,12 @@ func (s *BasesimplerlangListener) EnterReal(ctx *RealContext) {}
 // ExitReal is called when production real is exited.
 func (s *BasesimplerlangListener) ExitReal(ctx *RealContext) {}
 
+// EnterString is called when production string is entered.
+func (s *BasesimplerlangListener) EnterString(ctx *StringContext) {}
+
+// ExitString is called when production string is exited.
+func (s *BasesimplerlangListener) ExitString(ctx *StringContext) {}
+
 // EnterToint is called when production toint is entered.
 func (s *BasesimplerlangListener) EnterToint(ctx *TointContext) {}
 

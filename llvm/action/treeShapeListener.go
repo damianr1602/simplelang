@@ -33,23 +33,23 @@ func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
 	value, _ := stack.Pop()
 	variableMap[variable] = value.VarType
 
-	arrayLen := arrayName[value.Name]
-	logger.Log.Println("[variable]: ", variable, "arrayName[variable]", arrayLen, "map: ", arrayName)
-
 	if value.VarType == util.INT {
 		llgen.DeclareInt(variable)
 		llgen.AssignInt(variable, value.Name)
-	}
-	if value.VarType == util.REAL {
+	} else if value.VarType == util.REAL {
+		llgen.DeclareDouble(variable)
 		llgen.AssignDouble(variable, value.Name)
-	}
-	if value.VarType == util.UNKNOWN {
-		logger.Log.Println("AssignArrElemInt x")
+	} else if value.VarType == util.STRING {
+		llgen.DeclareString(variable)
+		llgen.AssignString(variable, value.Name)
+	} else if value.VarType == util.ARRAY {
+		arrayLen := arrayName[value.Name]
 		llgen.DeclareArrElemInt(variable)
+		logger.Log.Println("[variable]: ", variable, "arrayName[variable]", arrayLen, "map: ", arrayName)
+		logger.Log.Println("Exit ExitLet - variable: ", variable, "value: ", value, ", arrayLen: ", arrayLen)
+	} else {
+		logger.Log.Fatalf("Unknown variable")
 	}
-	logger.Log.Println("arrayName[variable]: ", arrayName)
-	logger.Log.Println("Exit ExitLet - variable: ", variable, "value: ", value, ", arrayLen: ", arrayLen)
-	logger.Log.Println("Exit ExitLet - variable: ", variable, "value: ", value.Name, "VarType: ", value.VarType)
 }
 
 // ExitShow impl
@@ -63,6 +63,8 @@ func (tsl *TreeShapeListener) ExitShow(ctx *parser.ShowContext) {
 			llgen.PrintfInt(variable)
 		} else if valueType == util.REAL {
 			llgen.PrintfDouble(variable)
+		} else if valueType == util.STRING {
+			llgen.PrintfString(variable)
 		} else if valueType == util.UNKNOWN {
 			llgen.PrintfInt(variable)
 		} else {
@@ -183,7 +185,13 @@ func (tsl *TreeShapeListener) ExitInt(ctx *parser.IntContext) {
 // ExitReal impl
 func (tsl *TreeShapeListener) ExitReal(ctx *parser.RealContext) {
 	stack.Push(util.NewValue(ctx.REAL().GetText(), util.REAL))
-	logger.Log.Printf("ExitToreal - real pushed on stack")
+	logger.Log.Printf("ExitReal - real pushed on stack")
+}
+
+// ExitString impl
+func (tsl *TreeShapeListener) ExitString(ctx *parser.StringContext) {
+	stack.Push(util.NewValue(ctx.STRING().GetText(), util.STRING))
+	logger.Log.Printf("ExitString - string pushed on stack")
 }
 
 // ExitToint impl
@@ -212,8 +220,8 @@ func (tsl *TreeShapeListener) ExitIntarray(ctx *parser.IntarrayContext) {
 		for _, elem := range arrayElem.AllINT() {
 			elems = append(elems, elem.GetText())
 		}
-	logger.Log.Println("ExitIntarray: ", elems[0])
-	logger.Log.Println("ExitIntarray: ", elems[1])
+		logger.Log.Println("ExitIntarray: ", elems[0])
+		logger.Log.Println("ExitIntarray: ", elems[1])
 
 		llgen.DeclareIntArray(variable, elems)
 		arrayName[variable] = strconv.Itoa(len(elems))
@@ -241,7 +249,7 @@ func (tsl *TreeShapeListener) ExitShowArrayElem(ctx *parser.ShowArrayElemContext
 // ExitAssignArrayElem impl
 func (tsl *TreeShapeListener) ExitAssignArrayElem(ctx *parser.AssignArrayElemContext) {
 	logger.Log.Println("AssignArrayElem variable", ctx.GetText())
-	stack.Push(util.NewValue(ctx.ID().GetText(), util.UNKNOWN))
+	stack.Push(util.NewValue(ctx.ID().GetText(), util.ARRAY))
 	logger.Log.Println("int pushed on stack: ", ctx.ID().GetText())
 
 	variable := ctx.ID().GetText()
@@ -261,6 +269,8 @@ func (tsl *TreeShapeListener) ExitAssignArrayElem(ctx *parser.AssignArrayElemCon
 		showError(ctx.GetStart().GetLine(), "variable not found"+variable)
 	}
 }
+
+// func (s *BasesimplerlangListener) ExitString(ctx *StringContext) {}
 
 // TODO error line number
 func showError(line int, msg string) {

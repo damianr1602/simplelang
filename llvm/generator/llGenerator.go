@@ -64,6 +64,14 @@ func (llgen *LLGenerate) PrintfDouble(value string) {
 	llgen.Reg++
 }
 
+//PrintfString llvm
+func (llgen *LLGenerate) PrintfString(value string) {
+	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = load i8*, i8** %" + "pointer_" + value + "\n"
+	llgen.Reg++
+	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @strpstr, i64 0, i64 0), i8* %" + strconv.Itoa(llgen.Reg-1) + ")\n"
+	llgen.Reg++
+}
+
 // PrintfArrElemInt llvm
 func (llgen *LLGenerate) PrintfArrElemInt(value string, valueElem string, arrayLen string) {
 	arrStr := " [" + arrayLen + " x i32]"
@@ -85,6 +93,12 @@ func (llgen *LLGenerate) DeclareDouble(value string) {
 	llgen.MainText += "%" + value + " = alloca double\n"
 }
 
+//DeclareString llvm
+func (llgen *LLGenerate) DeclareString(value string) {
+	llgen.MainText += "%" + value + " = alloca i32\n"
+
+}
+
 //AssignInt llvm
 func (llgen *LLGenerate) AssignInt(variable string, value string) {
 	llgen.MainText += "store i32 " + value + ", i32* %" + variable + "\n"
@@ -93,6 +107,22 @@ func (llgen *LLGenerate) AssignInt(variable string, value string) {
 //AssignDouble llvm
 func (llgen *LLGenerate) AssignDouble(variable string, value string) {
 	llgen.MainText += "store double " + value + ", double* %" + variable + "\n"
+}
+
+//AssignString llvm
+func (llgen *LLGenerate) AssignString(variable string, value string) {
+	v := value[1 : len(value)-1]
+	sLen := len(v) + 1
+
+	s := " [" + strconv.Itoa(sLen) + " x i8] c\"" + v + "\\00\"\n"
+	logger.Log.Println("[v]: ", v)
+	logger.Log.Println("[s]: ", s)
+
+	llgen.HeaderText += "@.str." + variable + " = constant" + s
+	llgen.MainText += "store i32 0, i32* %" + variable + "\n"
+	llgen.MainText += "%" + "pointer_" + variable + " = alloca i8*\n"
+	llgen.MainText += "store i8* getelementptr inbounds (" + "[5 x i8], [5 x i8]* " + "@.str." + variable + ", i64 0, i64 0), i8** %" + "pointer_" + variable + " \n"
+
 }
 
 //AddInt llvm
@@ -207,6 +237,7 @@ func (llgen *LLGenerate) Generate() string {
 	text += "@strpd = constant [4 x i8] c\"%f\\0A\\00\"\n"
 	text += "@strsi = constant [3 x i8] c\"%d\\00\"\n"
 	text += "@strsf = constant [4 x i8] c\"%lf\\00\"\n"
+	text += "@strpstr = constant [3 x i8] c\"%s\\00\"\n"
 	text += "define i32 @main() nounwind{\n"
 	text += llgen.MainText
 	text += "ret i32 0 }\n"

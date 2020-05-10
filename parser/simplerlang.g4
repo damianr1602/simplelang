@@ -11,7 +11,7 @@ stat:	SHOW ID		#show
 	| SHOWARRAYELEM ID '['(INT)']'   	#showArrayElem
    ;
    
-expr0:  expr1			#single0
+expr0:  expr1			    #single0
       | expr1 ADD expr1		#add 
       | expr1 SUB expr1		#sub 
 ;
@@ -25,6 +25,7 @@ expr1:  expr2			        #single1
 expr2:   INT			    #int
        | ID '['(INT)']' 	#assignArrayElem
        | REAL			    #real
+       | STRING			    #string
        | TOINT expr2		#toint
        | TOREAL expr2		#toreal
        | '(' expr0 ')'		#par
@@ -34,22 +35,28 @@ array_items: INT (',' INT )*
     ;
 
 SHOW:	'show' 
-   ;
+    ;
 
 SHOWARRAYELEM:	'show_array_elem' 
-   ;
+    ;
 
 READINT:	'read_int' 
-   ;
+    ;
    
 READDOUBLE:	'read_double' 
-   ;
+    ;
    
 READARRAY:	'read_array' 
-   ;
+    ;
    
 ID:   ('a'..'z'|'A'..'Z')+
-   ;
+    ;
+
+STRING: '"' ( ESC | ~[\\"\r\n] )* '"'
+    ;
+
+fragment ESC : '\\"' | '\\\\' 
+    ;
 
 TOINT: '(int)'
     ;

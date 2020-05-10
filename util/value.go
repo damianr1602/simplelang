@@ -7,6 +7,8 @@ type VarType int
 const (
 	INT VarType = iota
 	REAL
+	STRING
+	ARRAY
 	UNKNOWN
 )
 

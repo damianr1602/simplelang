@@ -56,6 +56,9 @@ type simplerlangListener interface {
 	// EnterReal is called when entering the real production.
 	EnterReal(c *RealContext)
 
+	// EnterString is called when entering the string production.
+	EnterString(c *StringContext)
+
 	// EnterToint is called when entering the toint production.
 	EnterToint(c *TointContext)
 
@@ -115,6 +118,9 @@ type simplerlangListener interface {
 
 	// ExitReal is called when exiting the real production.
 	ExitReal(c *RealContext)
+
+	// ExitString is called when exiting the string production.
+	ExitString(c *StringContext)
 
 	// ExitToint is called when exiting the toint production.
 	ExitToint(c *TointContext)
