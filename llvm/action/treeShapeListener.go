@@ -17,7 +17,7 @@ var stack util.Stack
 
 // TreeShapeListener TODO
 type TreeShapeListener struct {
-	*parser.BasesimplerlangListener
+	*parser.BasesimplelangListener
 }
 
 // NewTreeShapeListener TODO
@@ -30,7 +30,7 @@ func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
 	logger.Log.Println("Statment: ", ctx.GetText())
 
 	variable := ctx.ID().GetText()
-	value, _ := stack.Pop()
+	value := stack.Pop().(util.Value)
 	variableMap[variable] = value.VarType
 
 	if value.VarType == util.INT {
@@ -71,7 +71,7 @@ func (tsl *TreeShapeListener) ExitShow(ctx *parser.ShowContext) {
 			logger.Log.Fatalf("Unknown variable")
 		}
 	}
-	logger.Log.Println("Exit ExitShow - variable: ", variable, "valueType: ", valueType)
+	logger.Log.Println("Exit ExitShow - variable: ", variable, "valueType: ", valueType.String())
 }
 
 // ExitReadint impl
@@ -96,8 +96,8 @@ func (tsl *TreeShapeListener) ExitReaddouble(ctx *parser.ReaddoubleContext) {
 
 // ExitAdd impl
 func (tsl *TreeShapeListener) ExitAdd(ctx *parser.AddContext) {
-	val1, _ := stack.Pop()
-	val2, _ := stack.Pop()
+	val1 := stack.Pop().(util.Value)
+	val2 := stack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
 			llgen.AddInt(val1.Name, val2.Name)
@@ -115,8 +115,8 @@ func (tsl *TreeShapeListener) ExitAdd(ctx *parser.AddContext) {
 
 // ExitSub impl
 func (tsl *TreeShapeListener) ExitSub(ctx *parser.SubContext) {
-	val1, _ := stack.Pop()
-	val2, _ := stack.Pop()
+	val1 := stack.Pop().(util.Value)
+	val2 := stack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
 			llgen.SubInt(val1.Name, val2.Name)
@@ -134,8 +134,8 @@ func (tsl *TreeShapeListener) ExitSub(ctx *parser.SubContext) {
 
 // ExitMul impl
 func (tsl *TreeShapeListener) ExitMul(ctx *parser.MulContext) {
-	val1, _ := stack.Pop()
-	val2, _ := stack.Pop()
+	val1 := stack.Pop().(util.Value)
+	val2 := stack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
 			llgen.MulInt(val1.Name, val2.Name)
@@ -153,8 +153,8 @@ func (tsl *TreeShapeListener) ExitMul(ctx *parser.MulContext) {
 
 // ExitDiv impl
 func (tsl *TreeShapeListener) ExitDiv(ctx *parser.DivContext) {
-	val1, _ := stack.Pop()
-	val2, _ := stack.Pop()
+	val1 := stack.Pop().(util.Value)
+	val2 := stack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
 			llgen.DivInt(val1.Name, val2.Name)
@@ -168,12 +168,6 @@ func (tsl *TreeShapeListener) ExitDiv(ctx *parser.DivContext) {
 		}
 	}
 	logger.Log.Println("Exit ExitDiv")
-}
-
-// ExitProgram impl
-func (tsl *TreeShapeListener) ExitProgram(ctx *parser.ProgramContext) {
-	fmt.Println(llgen.Generate())
-	logger.Log.Printf("low-level code file generated")
 }
 
 // ExitInt impl
@@ -196,7 +190,7 @@ func (tsl *TreeShapeListener) ExitString(ctx *parser.StringContext) {
 
 // ExitToint impl
 func (tsl *TreeShapeListener) ExitToint(ctx *parser.TointContext) {
-	value, _ := stack.Pop()
+	value := stack.Pop().(util.Value)
 	llgen.Fptosi(value.Name)
 	stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.INT))
 
@@ -205,7 +199,7 @@ func (tsl *TreeShapeListener) ExitToint(ctx *parser.TointContext) {
 
 // ExitToreal impl
 func (tsl *TreeShapeListener) ExitToreal(ctx *parser.TorealContext) {
-	value, _ := stack.Pop()
+	value := stack.Pop().(util.Value)
 	llgen.Sitofp(value.Name)
 	stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.REAL))
 	logger.Log.Println("ExitToreal - value: ", value, " is now real")
@@ -270,7 +264,60 @@ func (tsl *TreeShapeListener) ExitAssignArrayElem(ctx *parser.AssignArrayElemCon
 	}
 }
 
-// func (s *BasesimplerlangListener) ExitString(ctx *StringContext) {}
+// ExitIf impl
+func (tsl *TreeShapeListener) ExitIf(ctx *parser.IfContext) {
+	logger.Log.Println("ExitIf exit")
+}
+
+// EnterBlockif impl
+func (tsl *TreeShapeListener) EnterBlockif(ctx *parser.BlockifContext) {
+	llgen.BlockIfEnter()
+	logger.Log.Println("EnterBlockif exit")
+}
+
+// ExitBlockif impl
+func (tsl *TreeShapeListener) ExitBlockif(ctx *parser.BlockifContext) {
+	llgen.BlockIfExit()
+	logger.Log.Println("ExitBlockif exit")
+}
+
+// ExitEqual impl
+func (tsl *TreeShapeListener) ExitEqual(ctx *parser.EqualContext) {
+	id := ctx.ID().GetText()
+	value := ctx.INT().GetText()
+	_, found := variableMap[id]
+
+	if found {
+		llgen.Icmp(id, value)
+	} else {
+		logger.Log.Println("ExitEqual not found variable")
+
+	}
+	logger.Log.Println("ExitEqual exit")
+}
+
+// func (s *BasesimplerlangListener) ExitBlock(ctx *BlockContext) {}
+// func (s *BasesimplerlangListener) EnterProg(ctx *ProgContext) {}
+// func (s *BasesimplerlangListener) ExitProg(ctx *ProgContext) {}
+
+// ExitBlock impl
+func (tsl *TreeShapeListener) ExitBlock(ctx *parser.BlockContext) {
+
+	logger.Log.Println("ExitBlock exit")
+}
+
+// EnterProg impl
+func (tsl *TreeShapeListener) EnterProg(ctx *parser.ProgContext) {
+
+	logger.Log.Println("EnterProg enter")
+}
+
+// ExitProg impl
+func (tsl *TreeShapeListener) ExitProg(ctx *parser.ProgContext) {
+	fmt.Println(llgen.Generate())
+
+	logger.Log.Printf("ExitProg low-level code file generated")
+}
 
 // TODO error line number
 func showError(line int, msg string) {

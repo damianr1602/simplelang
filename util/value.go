@@ -28,3 +28,7 @@ func NewValue(name string, varType VarType) Value {
 
 	return valueInit
 }
+
+func (s VarType) String() string {
+	return [...]string{"INT", "REAL", "STRING", "ARRAY", "UNKNOWN"}[s]
+}

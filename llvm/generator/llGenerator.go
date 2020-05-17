@@ -3,6 +3,8 @@ package llgenerator
 import (
 	"strconv"
 
+	"github.com/damianr1602/simplelang/util"
+
 	logger "github.com/damianr1602/simplelang/logging"
 )
 
@@ -10,7 +12,11 @@ type LLGenerate struct {
 	HeaderText string
 	MainText   string
 	Reg        int
+	Br         int
 }
+
+var brstack util.Stack
+var br int = 0
 
 var LLGenerateInstance = NewLLGenerate()
 
@@ -225,6 +231,33 @@ func (llgen *LLGenerate) AssignArrElemInt(variable string, valueElem string, arr
 func (llgen *LLGenerate) DeclareArrElemInt(variable string) {
 	llgen.MainText += "%" + variable + " = alloca i32\n"
 	llgen.MainText += "store i32 %" + strconv.Itoa(llgen.Reg-1) + ", i32* %" + variable + "\n"
+}
+
+// BlockIfEnter llvm
+func (llgen *LLGenerate) BlockIfEnter() {
+	br++
+	llgen.MainText += "br i1 %" + strconv.Itoa(llgen.Reg-1) + ", label %true" + strconv.Itoa(br) + ", label %false" + strconv.Itoa(br) + "\n"
+	llgen.MainText += "true" + strconv.Itoa(br) + ":\n"
+	brstack.Push(br)
+
+}
+
+// BlockIfExit llvm
+func (llgen *LLGenerate) BlockIfExit() {
+	b := brstack.Pop().(int)
+	logger.Log.Println("br stack popped: ", b)
+	llgen.MainText += "br label %false" + strconv.Itoa(b) + "\n"
+	llgen.MainText += "false" + strconv.Itoa(b) + ":\n"
+
+}
+
+// Icmp llvm
+func (llgen *LLGenerate) Icmp(id string, value string) {
+	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = load i32, i32* %" + id + "\n"
+	llgen.Reg++
+	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = icmp eq i32 %" + strconv.Itoa(llgen.Reg-1) + ", " + value + "\n"
+	llgen.Reg++
+
 }
 
 // Generate code in ll

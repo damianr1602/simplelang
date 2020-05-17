@@ -21,3 +21,5 @@ simplelang
 # logs
 **/log
 bin/pkg/*
+parser/*.class
+parser/*.java
