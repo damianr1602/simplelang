@@ -45,12 +45,6 @@ func (s *BasesimplelangListener) EnterLet(ctx *LetContext) {}
 // ExitLet is called when production let is exited.
 func (s *BasesimplelangListener) ExitLet(ctx *LetContext) {}
 
-// EnterIf is called when production if is entered.
-func (s *BasesimplelangListener) EnterIf(ctx *IfContext) {}
-
-// ExitIf is called when production if is exited.
-func (s *BasesimplelangListener) ExitIf(ctx *IfContext) {}
-
 // EnterReadint is called when production readint is entered.
 func (s *BasesimplelangListener) EnterReadint(ctx *ReadintContext) {}
 
@@ -74,6 +68,18 @@ func (s *BasesimplelangListener) EnterShowArrayElem(ctx *ShowArrayElemContext) {
 
 // ExitShowArrayElem is called when production showArrayElem is exited.
 func (s *BasesimplelangListener) ExitShowArrayElem(ctx *ShowArrayElemContext) {}
+
+// EnterIf is called when production if is entered.
+func (s *BasesimplelangListener) EnterIf(ctx *IfContext) {}
+
+// ExitIf is called when production if is exited.
+func (s *BasesimplelangListener) ExitIf(ctx *IfContext) {}
+
+// EnterRepeat is called when production repeat is entered.
+func (s *BasesimplelangListener) EnterRepeat(ctx *RepeatContext) {}
+
+// ExitRepeat is called when production repeat is exited.
+func (s *BasesimplelangListener) ExitRepeat(ctx *RepeatContext) {}
 
 // EnterSingle0 is called when production single0 is entered.
 func (s *BasesimplelangListener) EnterSingle0(ctx *Single0Context) {}
@@ -117,6 +123,12 @@ func (s *BasesimplelangListener) EnterInt(ctx *IntContext) {}
 // ExitInt is called when production int is exited.
 func (s *BasesimplelangListener) ExitInt(ctx *IntContext) {}
 
+// EnterId is called when production id is entered.
+func (s *BasesimplelangListener) EnterId(ctx *IdContext) {}
+
+// ExitId is called when production id is exited.
+func (s *BasesimplelangListener) ExitId(ctx *IdContext) {}
+
 // EnterAssignArrayElem is called when production assignArrayElem is entered.
 func (s *BasesimplelangListener) EnterAssignArrayElem(ctx *AssignArrayElemContext) {}
 
@@ -152,6 +164,12 @@ func (s *BasesimplelangListener) EnterPar(ctx *ParContext) {}
 
 // ExitPar is called when production par is exited.
 func (s *BasesimplelangListener) ExitPar(ctx *ParContext) {}
+
+// EnterRepetitions is called when production repetitions is entered.
+func (s *BasesimplelangListener) EnterRepetitions(ctx *RepetitionsContext) {}
+
+// ExitRepetitions is called when production repetitions is exited.
+func (s *BasesimplelangListener) ExitRepetitions(ctx *RepetitionsContext) {}
 
 // EnterBlockif is called when production blockif is entered.
 func (s *BasesimplelangListener) EnterBlockif(ctx *BlockifContext) {}

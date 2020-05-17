@@ -20,9 +20,6 @@ type simplelangListener interface {
 	// EnterLet is called when entering the let production.
 	EnterLet(c *LetContext)
 
-	// EnterIf is called when entering the if production.
-	EnterIf(c *IfContext)
-
 	// EnterReadint is called when entering the readint production.
 	EnterReadint(c *ReadintContext)
 
@@ -34,6 +31,12 @@ type simplelangListener interface {
 
 	// EnterShowArrayElem is called when entering the showArrayElem production.
 	EnterShowArrayElem(c *ShowArrayElemContext)
+
+	// EnterIf is called when entering the if production.
+	EnterIf(c *IfContext)
+
+	// EnterRepeat is called when entering the repeat production.
+	EnterRepeat(c *RepeatContext)
 
 	// EnterSingle0 is called when entering the single0 production.
 	EnterSingle0(c *Single0Context)
@@ -56,6 +59,9 @@ type simplelangListener interface {
 	// EnterInt is called when entering the int production.
 	EnterInt(c *IntContext)
 
+	// EnterId is called when entering the id production.
+	EnterId(c *IdContext)
+
 	// EnterAssignArrayElem is called when entering the assignArrayElem production.
 	EnterAssignArrayElem(c *AssignArrayElemContext)
 
@@ -73,6 +79,9 @@ type simplelangListener interface {
 
 	// EnterPar is called when entering the par production.
 	EnterPar(c *ParContext)
+
+	// EnterRepetitions is called when entering the repetitions production.
+	EnterRepetitions(c *RepetitionsContext)
 
 	// EnterBlockif is called when entering the blockif production.
 	EnterBlockif(c *BlockifContext)
@@ -95,9 +104,6 @@ type simplelangListener interface {
 	// ExitLet is called when exiting the let production.
 	ExitLet(c *LetContext)
 
-	// ExitIf is called when exiting the if production.
-	ExitIf(c *IfContext)
-
 	// ExitReadint is called when exiting the readint production.
 	ExitReadint(c *ReadintContext)
 
@@ -109,6 +115,12 @@ type simplelangListener interface {
 
 	// ExitShowArrayElem is called when exiting the showArrayElem production.
 	ExitShowArrayElem(c *ShowArrayElemContext)
+
+	// ExitIf is called when exiting the if production.
+	ExitIf(c *IfContext)
+
+	// ExitRepeat is called when exiting the repeat production.
+	ExitRepeat(c *RepeatContext)
 
 	// ExitSingle0 is called when exiting the single0 production.
 	ExitSingle0(c *Single0Context)
@@ -131,6 +143,9 @@ type simplelangListener interface {
 	// ExitInt is called when exiting the int production.
 	ExitInt(c *IntContext)
 
+	// ExitId is called when exiting the id production.
+	ExitId(c *IdContext)
+
 	// ExitAssignArrayElem is called when exiting the assignArrayElem production.
 	ExitAssignArrayElem(c *AssignArrayElemContext)
 
@@ -148,6 +163,9 @@ type simplelangListener interface {
 
 	// ExitPar is called when exiting the par production.
 	ExitPar(c *ParContext)
+
+	// ExitRepetitions is called when exiting the repetitions production.
+	ExitRepetitions(c *RepetitionsContext)
 
 	// ExitBlockif is called when exiting the blockif production.
 	ExitBlockif(c *BlockifContext)

@@ -7,13 +7,14 @@ block: ( stat? NEWLINE )*
 
 stat:	SHOW ID		#show
 	| ID ASSIGN expr0	#let
-	| IF equal THEN blockif ENDIF	#if
 	| READINT ID   	#readint
     | ID '['(INT)?']' (ASSIGN '{' array_items '}')?          #intarray
 	| READDOUBLE ID   	#readdouble
 	| SHOWARRAYELEM ID '['(INT)']'   	#showArrayElem
+	| IF equal THEN blockif ENDIF	#if
+	| REPEAT repetitions block ENDREPEAT	#repeat
    ;
-   
+
 expr0:  expr1			    #single0
       | expr1 ADD expr1		#add 
       | expr1 SUB expr1		#sub 
@@ -26,6 +27,7 @@ expr1:  expr2			        #single1
 ;
 
 expr2:   INT			    #int
+       | ID             	#id
        | ID '['(INT)']' 	#assignArrayElem
        | REAL			    #real
        | STRING			    #string
@@ -34,7 +36,19 @@ expr2:   INT			    #int
        | '(' expr0 ')'		#par
 ;	
 
-blockif: block;
+
+repetitions: expr2
+;
+
+REPEAT: 'repeat'
+;
+
+ENDREPEAT: 'endrepeat';
+
+
+
+blockif: block
+;
 
 equal: ID '==' INT
     ;

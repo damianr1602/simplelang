@@ -302,14 +302,44 @@ func (tsl *TreeShapeListener) ExitEqual(ctx *parser.EqualContext) {
 
 // ExitBlock impl
 func (tsl *TreeShapeListener) ExitBlock(ctx *parser.BlockContext) {
+	logger.Log.Println("ExitBlock enter", ctx.GetText())
+	// logger.Log.Println("ExitBlock parent ", ctx.GetTypedRuleContexts(reflect.TypeOf(parser.RepetitionsContext)))
 
+	if t, ok := ctx.GetParent().(*parser.RepeatContext); ok {
+		logger.Log.Println("is ok? :", ok)
+		logger.Log.Println("t=", t.GetText())
+		llgen.EndLoop()
+	} 
+	
+
+	//arrayElem := ctx.Array_items().(*parser.Array_itemsContext); arrayElem != nil {
 	logger.Log.Println("ExitBlock exit")
 }
 
-// EnterProg impl
-func (tsl *TreeShapeListener) EnterProg(ctx *parser.ProgContext) {
+// ExitRepetitions impl
+func (tsl *TreeShapeListener) ExitRepetitions(ctx *parser.RepetitionsContext) {
+	variable := ctx.GetText()
+	valueType, found := variableMap[variable]
+	logger.Log.Println("variableMap[variable]: ", variableMap, "variable: ", variable, "len(variableMap, ", len(variableMap), "is found? :", found)
+	if found {
+		if valueType == util.INT {
+			llgen.StartLoop(variable)
 
-	logger.Log.Println("EnterProg enter")
+		}
+	} else {
+		repCounter, err := strconv.Atoi(variable)
+		if err != nil {
+			showError(ctx.GetStart().GetLine(), "variable not int "+variable)
+		}
+		valueName := "repCounter" + strconv.Itoa(repCounter+len(variableMap))
+		llgen.DeclareInt(valueName)
+		llgen.AssignInt(valueName, variable)
+		llgen.StartLoop(valueName)
+
+	}
+
+	// llgen.StartLoop(value)
+	logger.Log.Println("ExitRepetitions: ", ctx.GetText())
 }
 
 // ExitProg impl

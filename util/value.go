@@ -5,11 +5,11 @@ type VarType int
 
 // enum representatoin
 const (
-	INT VarType = iota
+	UNKNOWN VarType = iota
+	INT
 	REAL
 	STRING
 	ARRAY
-	UNKNOWN
 )
 
 // Value for simple lang variables
@@ -30,5 +30,5 @@ func NewValue(name string, varType VarType) Value {
 }
 
 func (s VarType) String() string {
-	return [...]string{"INT", "REAL", "STRING", "ARRAY", "UNKNOWN"}[s]
+	return [...]string{"UNKNOWN", "INT", "REAL", "STRING", "ARRAY"}[s]
 }

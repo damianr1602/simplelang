@@ -32,7 +32,7 @@ func NewLLGenerate() LLGenerate {
 
 //LoadInt llvm
 func (llgen *LLGenerate) LoadInt(value string) {
-	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = load i32, i32* %" + value + ")\n"
+	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = load i32, i32* %" + value + "\n"
 	llgen.Reg++
 }
 
@@ -258,6 +258,42 @@ func (llgen *LLGenerate) Icmp(id string, value string) {
 	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = icmp eq i32 %" + strconv.Itoa(llgen.Reg-1) + ", " + value + "\n"
 	llgen.Reg++
 
+}
+
+// StartLoop llvm
+func (llgen *LLGenerate) StartLoop(repetitions string) {
+	llgen.DeclareInt(strconv.Itoa(llgen.Reg))
+	counter := llgen.Reg
+	coutnerString := strconv.Itoa(counter)
+	llgen.Reg++
+	llgen.AssignInt(coutnerString, "0")
+	br++
+	llgen.MainText += "br label %cond" + strconv.Itoa(br) + "\n"
+	llgen.MainText += "cond" + strconv.Itoa(br) + ":\n"
+	
+	llgen.LoadInt(coutnerString)
+	llgen.AddInt("%"+strconv.Itoa(llgen.Reg-1), "1")
+	llgen.AssignInt(coutnerString, "%"+strconv.Itoa(llgen.Reg-1))
+	
+	llgen.LoadInt(repetitions)
+	llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = icmp slt i32 %" + strconv.Itoa(llgen.Reg-3) + ", %" + strconv.Itoa(llgen.Reg-1) + "\n"
+	llgen.Reg++
+	llgen.MainText += "br i1 %" + strconv.Itoa(llgen.Reg-1) + ", label %true" + strconv.Itoa(br) + ", label %false" + strconv.Itoa(br) + "\n"
+	llgen.MainText += "true" + strconv.Itoa(br) + ":\n"
+	brstack.Push(br)
+	logger.Log.Println(brstack, "stack after repeat block: ", br)
+	// llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = load i32, i32* %" + id + "\n"
+	// llgen.MainText += "%" + strconv.Itoa(llgen.Reg) + " = icmp eq i32 %" + strconv.Itoa(llgen.Reg-1) + ", " + value + "\n"
+	// llgen.Reg++
+
+}
+
+// EndLoop impl
+func (llgen *LLGenerate) EndLoop() {
+	b := brstack.Pop().(int)
+	logger.Log.Println("br stack popped: ", b)
+	llgen.MainText += "br label %cond" + strconv.Itoa(b) + "\n"
+	llgen.MainText += "false" + strconv.Itoa(b) + ":\n"
 }
 
 // Generate code in ll
