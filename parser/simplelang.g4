@@ -2,7 +2,7 @@ grammar simplelang;
 
 prog: block;
 
-block: ( stat? NEWLINE )* 
+block: ( (stat|function)? NEWLINE )* 
 ;
 
 stat:	SHOW ID		#show
@@ -14,6 +14,21 @@ stat:	SHOW ID		#show
 	| IF equal THEN block ENDIF	#if
 	| REPEAT repetitions block ENDREPEAT	#repeat
    ;
+
+function: FUNC func_param fblock ENDFUNC
+;
+FUNC: 'func'
+;
+
+ENDFUNC: 'endfunc'
+;
+
+func_param: ID
+;
+
+fblock: ( stat? NEWLINE )* 
+;
+
 
 expr0:  expr1			    #single0
       | expr1 ADD expr1		#add 
