@@ -269,17 +269,21 @@ func (tsl *TreeShapeListener) ExitIf(ctx *parser.IfContext) {
 	logger.Log.Println("ExitIf exit")
 }
 
-// EnterBlockif impl
-func (tsl *TreeShapeListener) EnterBlockif(ctx *parser.BlockifContext) {
-	llgen.BlockIfEnter()
-	logger.Log.Println("EnterBlockif exit")
+// EnterBlock impl
+func (tsl *TreeShapeListener) EnterBlock(ctx *parser.BlockContext) {
+	if t, ok := ctx.GetParent().(*parser.IfContext); ok {
+		logger.Log.Println("is ok? :", ok)
+		logger.Log.Println("t=", t.GetText())
+		llgen.BlockIfEnter()
+	}
+	logger.Log.Println("EnterBlock exit")
 }
 
 // ExitBlockif impl
-func (tsl *TreeShapeListener) ExitBlockif(ctx *parser.BlockifContext) {
-	llgen.BlockIfExit()
-	logger.Log.Println("ExitBlockif exit")
-}
+// func (tsl *TreeShapeListener) ExitBlockif(ctx *parser.BlockifContext) {
+// 	llgen.BlockIfExit()
+// 	logger.Log.Println("ExitBlockif exit")
+// }
 
 // ExitEqual impl
 func (tsl *TreeShapeListener) ExitEqual(ctx *parser.EqualContext) {
@@ -309,8 +313,11 @@ func (tsl *TreeShapeListener) ExitBlock(ctx *parser.BlockContext) {
 		logger.Log.Println("is ok? :", ok)
 		logger.Log.Println("t=", t.GetText())
 		llgen.EndLoop()
-	} 
-	
+	} else if t, ok := ctx.GetParent().(*parser.IfContext); ok {
+		logger.Log.Println("is ok? :", ok)
+		logger.Log.Println("t=", t.GetText())
+		llgen.BlockIfExit()
+	}
 
 	//arrayElem := ctx.Array_items().(*parser.Array_itemsContext); arrayElem != nil {
 	logger.Log.Println("ExitBlock exit")

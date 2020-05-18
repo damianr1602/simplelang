@@ -83,9 +83,6 @@ type simplelangListener interface {
 	// EnterRepetitions is called when entering the repetitions production.
 	EnterRepetitions(c *RepetitionsContext)
 
-	// EnterBlockif is called when entering the blockif production.
-	EnterBlockif(c *BlockifContext)
-
 	// EnterEqual is called when entering the equal production.
 	EnterEqual(c *EqualContext)
 
@@ -166,9 +163,6 @@ type simplelangListener interface {
 
 	// ExitRepetitions is called when exiting the repetitions production.
 	ExitRepetitions(c *RepetitionsContext)
-
-	// ExitBlockif is called when exiting the blockif production.
-	ExitBlockif(c *BlockifContext)
 
 	// ExitEqual is called when exiting the equal production.
 	ExitEqual(c *EqualContext)

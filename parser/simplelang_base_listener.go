@@ -171,12 +171,6 @@ func (s *BasesimplelangListener) EnterRepetitions(ctx *RepetitionsContext) {}
 // ExitRepetitions is called when production repetitions is exited.
 func (s *BasesimplelangListener) ExitRepetitions(ctx *RepetitionsContext) {}
 
-// EnterBlockif is called when production blockif is entered.
-func (s *BasesimplelangListener) EnterBlockif(ctx *BlockifContext) {}
-
-// ExitBlockif is called when production blockif is exited.
-func (s *BasesimplelangListener) ExitBlockif(ctx *BlockifContext) {}
-
 // EnterEqual is called when production equal is entered.
 func (s *BasesimplelangListener) EnterEqual(ctx *EqualContext) {}
 

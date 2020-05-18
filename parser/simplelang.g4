@@ -11,7 +11,7 @@ stat:	SHOW ID		#show
     | ID '['(INT)?']' (ASSIGN '{' array_items '}')?          #intarray
 	| READDOUBLE ID   	#readdouble
 	| SHOWARRAYELEM ID '['(INT)']'   	#showArrayElem
-	| IF equal THEN blockif ENDIF	#if
+	| IF equal THEN block ENDIF	#if
 	| REPEAT repetitions block ENDREPEAT	#repeat
    ;
 
@@ -46,9 +46,6 @@ REPEAT: 'repeat'
 ENDREPEAT: 'endrepeat';
 
 
-
-blockif: block
-;
 
 equal: ID '==' INT
     ;
