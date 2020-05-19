@@ -34,28 +34,30 @@ func NewTreeShapeListener() *TreeShapeListener {
 
 // ExitLet impl
 func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
-	// logger.Log.Println("Statment: ", ctx.GetText())
-
+	logger.Log.Println("Statment: ", ctx.GetText())
 	variable := ctx.ID().GetText()
-	value := tsl.CalculationsStack.Pop().(util.Value)
-	tsl.LocalVariables[variable] = value.VarType
-
-	if value.VarType == util.INT {
-		tsl.Llgen.AssignInt(tsl.SetVariable(variable), value.Name)
-	} else if value.VarType == util.REAL {
-		tsl.Llgen.AssignDouble(tsl.SetVariable(variable), value.Name)
-	} else if value.VarType == util.STRING {
-		tsl.Llgen.DeclareString(variable)
-
-		tsl.Llgen.AssignString(variable, value.Name, false)
-	} else if value.VarType == util.ARRAY {
-		arrayLen := tsl.ArrayName[value.Name]
-		tsl.Llgen.DeclareArrElemInt(variable)
-		logger.Log.Println("[variable]: ", variable, "tsl.ArrayName[variable]", arrayLen, "map: ", tsl.ArrayName)
-		logger.Log.Println("Exit ExitLet - variable: ", variable, "value: ", value, ", arrayLen: ", arrayLen)
-	} else {
-		logger.Log.Fatalf("Unknown variable")
+	if value, ok := tsl.CalculationsStack.Pop().(util.Value); ok {
+		logger.Log.Println("value: ", value)
+		if value.VarType == util.INT {
+			tsl.Llgen.AssignInt(tsl.SetVariable(variable), value.Name)
+		} else if value.VarType == util.REAL {
+			tsl.Llgen.AssignDouble(tsl.SetVariable(variable), value.Name)
+		} else if value.VarType == util.STRING {
+			tsl.Llgen.DeclareString(variable)
+			tsl.Llgen.AssignString(variable, value.Name, false)
+		} else if value.VarType == util.FUNC {
+			tsl.Llgen.AssignInt(tsl.SetVariable(variable), "%" + value.Name)
+		} else if value.VarType == util.ARRAY {
+			arrayLen := tsl.ArrayName[value.Name]
+			tsl.Llgen.DeclareArrElemInt(variable)
+			logger.Log.Println("[variable]: ", variable, "tsl.ArrayName[variable]", arrayLen, "map: ", tsl.ArrayName)
+			logger.Log.Println("Exit ExitLet - variable: ", variable, "value: ", value, ", arrayLen: ", arrayLen)
+		} else {
+			logger.Log.Fatalf("Unknown variable")
+		}
+		tsl.LocalVariables[variable] = value.VarType
 	}
+
 }
 
 // ExitShow impl
@@ -72,7 +74,7 @@ func (tsl *TreeShapeListener) ExitShow(ctx *parser.ShowContext) {
 			tsl.Llgen.LoadDouble(tsl.SetVariable(variable))
 			tsl.Llgen.PrintfDouble(tsl.SetVariable(variable))
 		} else if valueType == util.STRING {
-			
+
 			tsl.Llgen.PrintfString(variable)
 		} else if valueType == util.UNKNOWN {
 			tsl.Llgen.PrintfInt(variable)

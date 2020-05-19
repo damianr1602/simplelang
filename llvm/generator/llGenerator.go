@@ -335,8 +335,7 @@ func (llgen *LLGenerate) FuncStop() {
 
 // CallFunc llvm
 func (llgen *LLGenerate) CallFunc(funcName string) {
-	llgen.BufferText += "%" + strconv.Itoa(llgen.Reg) + " = call i32 @" + funcName + "()\n"
-	llgen.Reg++
+	llgen.BufferText += "%" + funcName + " = call i32 @" + funcName + "()\n"
 	logger.Log.Println("CallFunc ", funcName)
 }
 

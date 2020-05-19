@@ -10,6 +10,7 @@ const (
 	REAL
 	STRING
 	ARRAY
+	FUNC
 )
 
 // Value for simple lang variables
@@ -30,5 +31,5 @@ func NewValue(name string, varType VarType) Value {
 }
 
 func (s VarType) String() string {
-	return [...]string{"UNKNOWN", "INT", "REAL", "STRING", "ARRAY"}[s]
+	return [...]string{"UNKNOWN", "INT", "REAL", "STRING", "ARRAY", "FUNC"}[s]
 }

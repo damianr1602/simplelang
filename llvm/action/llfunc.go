@@ -21,22 +21,41 @@ import (
 
 var function, value string
 
+// ExitId impl
+func (tsl *TreeShapeListener) ExitId(ctx *parser.IdContext) {
+	tsl.Llgen.CallFunc(ctx.ID().GetText())
+	tsl.CalculationsStack.Push(util.NewValue(ctx.ID().GetText(), util.FUNC))
+
+	logger.Log.Println("Exit ExitId - stack: ",tsl.CalculationsStack)
+}
+
+
+
 // ExitCall impl
 func (tsl *TreeShapeListener) ExitCall(ctx *parser.CallContext) {
 	tsl.Llgen.CallFunc(ctx.ID().GetText())
-	logger.Log.Println("Exit ExitReadint - variable")
+	logger.Log.Println("Exit ExitCall - variable")
 }
 
 // EnterFBlock impl
 func (tsl *TreeShapeListener) EnterFBlock(ctx *parser.FBlockContext) {
 	tsl.Global = false
-	logger.Log.Println("Exit ExitReadint - variable")
+	logger.Log.Println("Exit EnterFBlock - ")
 }
 
-// ExitFBlock impl
-func (tsl *TreeShapeListener) ExitFBlock(ctx *parser.FBlockContext) {
+// ExitResult impl
+func (tsl *TreeShapeListener) ExitResult(ctx *parser.ResultContext) {
+	result := ctx.ID().GetText()
+	_, found := tsl.LocalVariables[result]
+	if found {
+		tsl.Llgen.LoadInt("%" + result)
+	}
+	logger.Log.Println("Result: ", result)
 
-	logger.Log.Println("Exit ExitReadint - variable")
+	tsl.Llgen.FuncStop()
+	tsl.LocalVariables = make(map[string]util.VarType)
+	logger.Log.Println("Exit ExitFBlock - ")
+	tsl.Global = true
 }
 
 // ExitFuncName impl
@@ -51,6 +70,11 @@ func (tsl *TreeShapeListener) ExitFuncName(ctx *parser.FuncNameContext) {
 
 // SetVariable impl
 func (tsl *TreeShapeListener) SetVariable(varName string) string {
+	logger.Log.Println("GlobalVariables: ", tsl.GlobalVariables)
+	logger.Log.Println("LocalVariables: ", tsl.LocalVariables)
+	logger.Log.Println("FunctionVariables: ", tsl.FunctionVariables)
+	logger.Log.Println("Is global scope?: ", tsl.Global)
+
 	var name string
 	if tsl.Global {
 		if VarType, found := tsl.GlobalVariables[varName]; found == false {
