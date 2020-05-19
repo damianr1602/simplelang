@@ -13,9 +13,10 @@ stat:	SHOW ID		#show
 	| SHOWARRAYELEM ID '['(INT)']'   	#showArrayElem
 	| IF equal THEN block ENDIF	#if
 	| REPEAT repetitions block ENDREPEAT	#repeat
+	| ID	#call
    ;
 
-function: FUNC func_param fblock ENDFUNC
+function: FUNC funcName fBlock result? ENDFUNC
 ;
 FUNC: 'func'
 ;
@@ -23,10 +24,12 @@ FUNC: 'func'
 ENDFUNC: 'endfunc'
 ;
 
-func_param: ID
+funcName: ID
 ;
 
-fblock: ( stat? NEWLINE )* 
+fBlock: ( stat? NEWLINE )* 
+;
+result: 'return' ID
 ;
 
 

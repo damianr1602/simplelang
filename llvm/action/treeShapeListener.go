@@ -4,20 +4,27 @@ import (
 	"fmt"
 	"strconv"
 
-	llgenerator "github.com/damianr1602/simplelang/llvm/generator"
+	generator "github.com/damianr1602/simplelang/llvm/generator"
 	logger "github.com/damianr1602/simplelang/logging"
 	"github.com/damianr1602/simplelang/parser"
 	"github.com/damianr1602/simplelang/util"
 )
 
-var variableMap map[string]util.VarType = make(map[string]util.VarType)
-var arrayName map[string]string = make(map[string]string)
-var llgen llgenerator.LLGenerate = llgenerator.LLGenerateInstance
-var stack util.Stack
+// var tsl.LocalVariables map[string]util.VarType = make(map[string]util.VarType)
+// var globalVaricvables map[string]util.VarType = make(map[string]util.VarType)
+// var tsl.ArrayName map[string]string = make(map[string]string)
+// var tsl.CalculationsStack util.Stack
 
 // TreeShapeListener TODO
 type TreeShapeListener struct {
 	*parser.BasesimplelangListener
+	Llgen             generator.LLGenerate
+	LocalVariables    map[string]util.VarType
+	GlobalVariables   map[string]util.VarType
+	FunctionVariables map[string]util.VarType
+	ArrayName         map[string]string
+	CalculationsStack util.Stack
+	Global            bool
 }
 
 // NewTreeShapeListener TODO
@@ -27,25 +34,24 @@ func NewTreeShapeListener() *TreeShapeListener {
 
 // ExitLet impl
 func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
-	logger.Log.Println("Statment: ", ctx.GetText())
+	// logger.Log.Println("Statment: ", ctx.GetText())
 
 	variable := ctx.ID().GetText()
-	value := stack.Pop().(util.Value)
-	variableMap[variable] = value.VarType
+	value := tsl.CalculationsStack.Pop().(util.Value)
+	tsl.LocalVariables[variable] = value.VarType
 
 	if value.VarType == util.INT {
-		llgen.DeclareInt(variable)
-		llgen.AssignInt(variable, value.Name)
+		tsl.Llgen.AssignInt(tsl.SetVariable(variable), value.Name)
 	} else if value.VarType == util.REAL {
-		llgen.DeclareDouble(variable)
-		llgen.AssignDouble(variable, value.Name)
+		tsl.Llgen.AssignDouble(tsl.SetVariable(variable), value.Name)
 	} else if value.VarType == util.STRING {
-		llgen.DeclareString(variable)
-		llgen.AssignString(variable, value.Name)
+		tsl.Llgen.DeclareString(variable)
+
+		tsl.Llgen.AssignString(variable, value.Name, false)
 	} else if value.VarType == util.ARRAY {
-		arrayLen := arrayName[value.Name]
-		llgen.DeclareArrElemInt(variable)
-		logger.Log.Println("[variable]: ", variable, "arrayName[variable]", arrayLen, "map: ", arrayName)
+		arrayLen := tsl.ArrayName[value.Name]
+		tsl.Llgen.DeclareArrElemInt(variable)
+		logger.Log.Println("[variable]: ", variable, "tsl.ArrayName[variable]", arrayLen, "map: ", tsl.ArrayName)
 		logger.Log.Println("Exit ExitLet - variable: ", variable, "value: ", value, ", arrayLen: ", arrayLen)
 	} else {
 		logger.Log.Fatalf("Unknown variable")
@@ -55,18 +61,21 @@ func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
 // ExitShow impl
 func (tsl *TreeShapeListener) ExitShow(ctx *parser.ShowContext) {
 	variable := ctx.ID().GetText()
-	valueType, found := variableMap[variable]
-	logger.Log.Println("variableMap[variable]: ", variableMap, "variable: ", variable)
+	valueType, found := tsl.LocalVariables[variable]
+	logger.Log.Println("variableMap[variable]: ", tsl.LocalVariables, "variable: ", variable)
 
 	if found {
 		if valueType == util.INT {
-			llgen.PrintfInt(variable)
+			tsl.Llgen.LoadInt(tsl.SetVariable(variable))
+			tsl.Llgen.PrintfInt(tsl.SetVariable(variable))
 		} else if valueType == util.REAL {
-			llgen.PrintfDouble(variable)
+			tsl.Llgen.LoadDouble(tsl.SetVariable(variable))
+			tsl.Llgen.PrintfDouble(tsl.SetVariable(variable))
 		} else if valueType == util.STRING {
-			llgen.PrintfString(variable)
+			
+			tsl.Llgen.PrintfString(variable)
 		} else if valueType == util.UNKNOWN {
-			llgen.PrintfInt(variable)
+			tsl.Llgen.PrintfInt(variable)
 		} else {
 			logger.Log.Fatalf("Unknown variable")
 		}
@@ -77,34 +86,32 @@ func (tsl *TreeShapeListener) ExitShow(ctx *parser.ShowContext) {
 // ExitReadint impl
 func (tsl *TreeShapeListener) ExitReadint(ctx *parser.ReadintContext) {
 	variable := ctx.ID().GetText()
-	variableMap[variable] = util.INT
-	llgen.DeclareInt(variable)
-	llgen.ScanfInt(variable)
+	tsl.LocalVariables[variable] = util.INT
+	tsl.Llgen.ScanfInt(tsl.SetVariable(variable))
 
-	logger.Log.Println("Exit ExitReadint - variable: ", variable, "type: ", variableMap[variable])
+	logger.Log.Println("Exit ExitReadint - variable: ", variable, "type: ", tsl.LocalVariables[variable])
 }
 
 // ExitReaddouble impl
 func (tsl *TreeShapeListener) ExitReaddouble(ctx *parser.ReaddoubleContext) {
 	variable := ctx.ID().GetText()
-	variableMap[variable] = util.REAL
-	llgen.DeclareDouble(variable)
-	llgen.ScanfDouble(variable)
+	tsl.LocalVariables[variable] = util.REAL
+	tsl.Llgen.ScanfDouble(tsl.SetVariable(variable))
 
-	logger.Log.Println("Exit ExitReadint - variable: ", variable, "type: ", variableMap[variable])
+	logger.Log.Println("Exit ExitReadint - variable: ", variable, "type: ", tsl.LocalVariables[variable])
 }
 
 // ExitAdd impl
 func (tsl *TreeShapeListener) ExitAdd(ctx *parser.AddContext) {
-	val1 := stack.Pop().(util.Value)
-	val2 := stack.Pop().(util.Value)
+	val1 := tsl.CalculationsStack.Pop().(util.Value)
+	val2 := tsl.CalculationsStack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
-			llgen.AddInt(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.INT))
+			tsl.Llgen.AddInt(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.INT))
 		} else if val1.VarType == util.REAL {
-			llgen.AddDouble(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.REAL))
+			tsl.Llgen.AddDouble(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.REAL))
 		} else {
 			logger.Log.Fatalf("Type mismatch")
 
@@ -115,15 +122,15 @@ func (tsl *TreeShapeListener) ExitAdd(ctx *parser.AddContext) {
 
 // ExitSub impl
 func (tsl *TreeShapeListener) ExitSub(ctx *parser.SubContext) {
-	val1 := stack.Pop().(util.Value)
-	val2 := stack.Pop().(util.Value)
+	val1 := tsl.CalculationsStack.Pop().(util.Value)
+	val2 := tsl.CalculationsStack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
-			llgen.SubInt(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.INT))
+			tsl.Llgen.SubInt(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.INT))
 		} else if val1.VarType == util.REAL {
-			llgen.SubDouble(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.REAL))
+			tsl.Llgen.SubDouble(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.REAL))
 		} else {
 			logger.Log.Fatalf("Type mismatch during subtraction")
 
@@ -134,15 +141,15 @@ func (tsl *TreeShapeListener) ExitSub(ctx *parser.SubContext) {
 
 // ExitMul impl
 func (tsl *TreeShapeListener) ExitMul(ctx *parser.MulContext) {
-	val1 := stack.Pop().(util.Value)
-	val2 := stack.Pop().(util.Value)
+	val1 := tsl.CalculationsStack.Pop().(util.Value)
+	val2 := tsl.CalculationsStack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
-			llgen.MulInt(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.INT))
+			tsl.Llgen.MulInt(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.INT))
 		} else if val1.VarType == util.REAL {
-			llgen.MulDouble(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.REAL))
+			tsl.Llgen.MulDouble(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.REAL))
 		} else {
 			logger.Log.Fatalf("Type mismatch")
 
@@ -153,15 +160,15 @@ func (tsl *TreeShapeListener) ExitMul(ctx *parser.MulContext) {
 
 // ExitDiv impl
 func (tsl *TreeShapeListener) ExitDiv(ctx *parser.DivContext) {
-	val1 := stack.Pop().(util.Value)
-	val2 := stack.Pop().(util.Value)
+	val1 := tsl.CalculationsStack.Pop().(util.Value)
+	val2 := tsl.CalculationsStack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
 		if val1.VarType == util.INT {
-			llgen.DivInt(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.INT))
+			tsl.Llgen.DivInt(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.INT))
 		} else if val1.VarType == util.REAL {
-			llgen.DivDouble(val1.Name, val2.Name)
-			stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.REAL))
+			tsl.Llgen.DivDouble(val1.Name, val2.Name)
+			tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.REAL))
 		} else {
 			logger.Log.Fatalf("Type mismatch")
 
@@ -172,43 +179,43 @@ func (tsl *TreeShapeListener) ExitDiv(ctx *parser.DivContext) {
 
 // ExitInt impl
 func (tsl *TreeShapeListener) ExitInt(ctx *parser.IntContext) {
-	stack.Push(util.NewValue(ctx.INT().GetText(), util.INT))
-	logger.Log.Printf("ExitInt - int pushed on stack")
+	tsl.CalculationsStack.Push(util.NewValue(ctx.INT().GetText(), util.INT))
+	logger.Log.Println("ExitInt - int pushed on tsl.CalculationsStack")
 }
 
 // ExitReal impl
 func (tsl *TreeShapeListener) ExitReal(ctx *parser.RealContext) {
-	stack.Push(util.NewValue(ctx.REAL().GetText(), util.REAL))
-	logger.Log.Printf("ExitReal - real pushed on stack")
+	tsl.CalculationsStack.Push(util.NewValue(ctx.REAL().GetText(), util.REAL))
+	logger.Log.Println("ExitReal - real pushed on tsl.CalculationsStack")
 }
 
 // ExitString impl
 func (tsl *TreeShapeListener) ExitString(ctx *parser.StringContext) {
-	stack.Push(util.NewValue(ctx.STRING().GetText(), util.STRING))
-	logger.Log.Printf("ExitString - string pushed on stack")
+	tsl.CalculationsStack.Push(util.NewValue(ctx.STRING().GetText(), util.STRING))
+	logger.Log.Println("ExitString - string pushed on tsl.CalculationsStack")
 }
 
 // ExitToint impl
 func (tsl *TreeShapeListener) ExitToint(ctx *parser.TointContext) {
-	value := stack.Pop().(util.Value)
-	llgen.Fptosi(value.Name)
-	stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.INT))
+	value := tsl.CalculationsStack.Pop().(util.Value)
+	tsl.Llgen.Fptosi(value.Name)
+	tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.INT))
 
 	logger.Log.Println("ExitReal - value: ", value, " is now int")
 }
 
 // ExitToreal impl
 func (tsl *TreeShapeListener) ExitToreal(ctx *parser.TorealContext) {
-	value := stack.Pop().(util.Value)
-	llgen.Sitofp(value.Name)
-	stack.Push(util.NewValue("%"+strconv.Itoa(llgen.Reg-1), util.REAL))
+	value := tsl.CalculationsStack.Pop().(util.Value)
+	tsl.Llgen.Sitofp(value.Name)
+	tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.REAL))
 	logger.Log.Println("ExitToreal - value: ", value, " is now real")
 }
 
 // ExitIntarray impl
 func (tsl *TreeShapeListener) ExitIntarray(ctx *parser.IntarrayContext) {
 	variable := ctx.ID().GetText()
-	variableMap[variable] = util.INT
+	tsl.LocalVariables[variable] = util.INT
 	var elems = make([]string, 0, 10)
 	if arrayElem := ctx.Array_items().(*parser.Array_itemsContext); arrayElem != nil {
 		for _, elem := range arrayElem.AllINT() {
@@ -217,8 +224,8 @@ func (tsl *TreeShapeListener) ExitIntarray(ctx *parser.IntarrayContext) {
 		logger.Log.Println("ExitIntarray: ", elems[0])
 		logger.Log.Println("ExitIntarray: ", elems[1])
 
-		llgen.DeclareIntArray(variable, elems)
-		arrayName[variable] = strconv.Itoa(len(elems))
+		tsl.Llgen.DeclareIntArray(variable, elems)
+		tsl.ArrayName[variable] = strconv.Itoa(len(elems))
 	}
 	logger.Log.Println("ExitIntarray: ", elems)
 }
@@ -227,11 +234,11 @@ func (tsl *TreeShapeListener) ExitIntarray(ctx *parser.IntarrayContext) {
 func (tsl *TreeShapeListener) ExitShowArrayElem(ctx *parser.ShowArrayElemContext) {
 	variable := ctx.ID().GetText()
 	valueElem := ctx.INT().GetText()
-	arrayLen := arrayName[variable]
-	valueType, found := variableMap[variable]
+	arrayLen := tsl.ArrayName[variable]
+	valueType, found := tsl.LocalVariables[variable]
 	if found {
 		if valueType == util.INT {
-			llgen.PrintfArrElemInt(variable, valueElem, arrayLen)
+			tsl.Llgen.PrintfArrElemInt(variable, valueElem, arrayLen)
 		} else {
 			logger.Log.Fatalf("Unknown variable")
 			panic("Unknown variable")
@@ -242,18 +249,18 @@ func (tsl *TreeShapeListener) ExitShowArrayElem(ctx *parser.ShowArrayElemContext
 
 // ExitAssignArrayElem impl
 func (tsl *TreeShapeListener) ExitAssignArrayElem(ctx *parser.AssignArrayElemContext) {
-	logger.Log.Println("AssignArrayElem variable", ctx.GetText())
-	stack.Push(util.NewValue(ctx.ID().GetText(), util.ARRAY))
-	logger.Log.Println("int pushed on stack: ", ctx.ID().GetText())
+	// logger.Log.Println("AssignArrayElem variable", ctx.GetText())
+	tsl.CalculationsStack.Push(util.NewValue(ctx.ID().GetText(), util.ARRAY))
+	logger.Log.Println("int pushed on tsl.CalculationsStack: ", ctx.ID().GetText())
 
 	variable := ctx.ID().GetText()
 	valueElem := ctx.INT().GetText()
-	arrayLen := arrayName[variable]
-	valueType, found := variableMap[variable]
+	arrayLen := tsl.ArrayName[variable]
+	valueType, found := tsl.LocalVariables[variable]
 	if found {
 		if valueType == util.INT {
 			// AssignArrElemInt(variable string, valueElem string, arrayLen string)
-			llgen.AssignArrElemInt(variable, valueElem, arrayLen)
+			tsl.Llgen.AssignArrElemInt(variable, valueElem, arrayLen)
 		} else {
 			logger.Log.Fatalf("Unknown variable")
 			panic("Unknown variable")
@@ -271,17 +278,17 @@ func (tsl *TreeShapeListener) ExitIf(ctx *parser.IfContext) {
 
 // EnterBlock impl
 func (tsl *TreeShapeListener) EnterBlock(ctx *parser.BlockContext) {
-	if t, ok := ctx.GetParent().(*parser.IfContext); ok {
+	if _, ok := ctx.GetParent().(*parser.IfContext); ok {
 		logger.Log.Println("is ok? :", ok)
-		logger.Log.Println("t=", t.GetText())
-		llgen.BlockIfEnter()
+		// logger.Log.Println("t=", t.GetText())
+		tsl.Llgen.BlockIfEnter()
 	}
 	logger.Log.Println("EnterBlock exit")
 }
 
 // ExitBlockif impl
 // func (tsl *TreeShapeListener) ExitBlockif(ctx *parser.BlockifContext) {
-// 	llgen.BlockIfExit()
+// 	tsl.Llgen.BlockIfExit()
 // 	logger.Log.Println("ExitBlockif exit")
 // }
 
@@ -289,10 +296,11 @@ func (tsl *TreeShapeListener) EnterBlock(ctx *parser.BlockContext) {
 func (tsl *TreeShapeListener) ExitEqual(ctx *parser.EqualContext) {
 	id := ctx.ID().GetText()
 	value := ctx.INT().GetText()
-	_, found := variableMap[id]
+	_, found := tsl.LocalVariables[id]
 
 	if found {
-		llgen.Icmp(id, value)
+		tsl.Llgen.LoadInt(tsl.SetVariable(id))
+		tsl.Llgen.Icmp(tsl.SetVariable(id), value)
 	} else {
 		logger.Log.Println("ExitEqual not found variable")
 
@@ -306,17 +314,17 @@ func (tsl *TreeShapeListener) ExitEqual(ctx *parser.EqualContext) {
 
 // ExitBlock impl
 func (tsl *TreeShapeListener) ExitBlock(ctx *parser.BlockContext) {
-	logger.Log.Println("ExitBlock enter", ctx.GetText())
+	// logger.Log.Println("ExitBlock enter", ctx.GetText())
 	// logger.Log.Println("ExitBlock parent ", ctx.GetTypedRuleContexts(reflect.TypeOf(parser.RepetitionsContext)))
 
-	if t, ok := ctx.GetParent().(*parser.RepeatContext); ok {
-		logger.Log.Println("is ok? :", ok)
-		logger.Log.Println("t=", t.GetText())
-		llgen.EndLoop()
-	} else if t, ok := ctx.GetParent().(*parser.IfContext); ok {
-		logger.Log.Println("is ok? :", ok)
-		logger.Log.Println("t=", t.GetText())
-		llgen.BlockIfExit()
+	if _, ok := ctx.GetParent().(*parser.RepeatContext); ok {
+		logger.Log.Println("is ok ctx? :", ok, " RepeatContext")
+		// logger.Log.Println("t=", t.GetText())
+		tsl.Llgen.EndLoop()
+	} else if _, ok := ctx.GetParent().(*parser.IfContext); ok {
+		logger.Log.Println("is ok ctx? :", ok, " IfContext")
+		// logger.Log.Println("t=", t.GetText())
+		tsl.Llgen.BlockIfExit()
 	}
 
 	//arrayElem := ctx.Array_items().(*parser.Array_itemsContext); arrayElem != nil {
@@ -326,11 +334,11 @@ func (tsl *TreeShapeListener) ExitBlock(ctx *parser.BlockContext) {
 // ExitRepetitions impl
 func (tsl *TreeShapeListener) ExitRepetitions(ctx *parser.RepetitionsContext) {
 	variable := ctx.GetText()
-	valueType, found := variableMap[variable]
-	logger.Log.Println("variableMap[variable]: ", variableMap, "variable: ", variable, "len(variableMap, ", len(variableMap), "is found? :", found)
+	valueType, found := tsl.LocalVariables[variable]
+	logger.Log.Println("variableMap[variable]: ", tsl.LocalVariables, "variable: ", variable, "len(variableMap, ", len(tsl.LocalVariables), "is found? :", found)
 	if found {
 		if valueType == util.INT {
-			llgen.StartLoop(variable)
+			tsl.Llgen.StartLoop(tsl.SetVariable(variable))
 
 		}
 	} else {
@@ -338,22 +346,29 @@ func (tsl *TreeShapeListener) ExitRepetitions(ctx *parser.RepetitionsContext) {
 		if err != nil {
 			showError(ctx.GetStart().GetLine(), "variable not int "+variable)
 		}
-		valueName := "repCounter" + strconv.Itoa(repCounter+len(variableMap))
-		llgen.DeclareInt(valueName)
-		llgen.AssignInt(valueName, variable)
-		llgen.StartLoop(valueName)
+		valueName := "repCounter" + strconv.Itoa(repCounter+len(tsl.LocalVariables))
+		tsl.Llgen.DeclareInt(valueName, tsl.Global)
+		tsl.Llgen.AssignInt(valueName, variable)
+		tsl.Llgen.StartLoop(tsl.SetVariable(variable))
 
 	}
 
-	// llgen.StartLoop(value)
-	logger.Log.Println("ExitRepetitions: ", ctx.GetText())
+	// tsl.Llgen.StartLoop(value)
+	// logger.Log.Println("ExitRepetitions: ", ctx.GetText())
+}
+
+// EnterProg impl
+func (tsl *TreeShapeListener) EnterProg(ctx *parser.ProgContext) {
+	tsl.Global = true
+	logger.Log.Println("EnterProg set global: ", tsl.Global)
 }
 
 // ExitProg impl
 func (tsl *TreeShapeListener) ExitProg(ctx *parser.ProgContext) {
-	fmt.Println(llgen.Generate())
+	tsl.Llgen.StopMain()
+	fmt.Println(tsl.Llgen.Generate())
 
-	logger.Log.Printf("ExitProg low-level code file generated")
+	logger.Log.Println("ExitProg low-level code file generated")
 }
 
 // TODO error line number

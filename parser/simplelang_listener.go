@@ -38,6 +38,21 @@ type simplelangListener interface {
 	// EnterRepeat is called when entering the repeat production.
 	EnterRepeat(c *RepeatContext)
 
+	// EnterCall is called when entering the call production.
+	EnterCall(c *CallContext)
+
+	// EnterFunction is called when entering the function production.
+	EnterFunction(c *FunctionContext)
+
+	// EnterFuncName is called when entering the funcName production.
+	EnterFuncName(c *FuncNameContext)
+
+	// EnterFBlock is called when entering the fBlock production.
+	EnterFBlock(c *FBlockContext)
+
+	// EnterResult is called when entering the result production.
+	EnterResult(c *ResultContext)
+
 	// EnterSingle0 is called when entering the single0 production.
 	EnterSingle0(c *Single0Context)
 
@@ -118,6 +133,21 @@ type simplelangListener interface {
 
 	// ExitRepeat is called when exiting the repeat production.
 	ExitRepeat(c *RepeatContext)
+
+	// ExitCall is called when exiting the call production.
+	ExitCall(c *CallContext)
+
+	// ExitFunction is called when exiting the function production.
+	ExitFunction(c *FunctionContext)
+
+	// ExitFuncName is called when exiting the funcName production.
+	ExitFuncName(c *FuncNameContext)
+
+	// ExitFBlock is called when exiting the fBlock production.
+	ExitFBlock(c *FBlockContext)
+
+	// ExitResult is called when exiting the result production.
+	ExitResult(c *ResultContext)
 
 	// ExitSingle0 is called when exiting the single0 production.
 	ExitSingle0(c *Single0Context)

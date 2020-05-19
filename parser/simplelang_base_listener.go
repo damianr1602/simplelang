@@ -81,6 +81,36 @@ func (s *BasesimplelangListener) EnterRepeat(ctx *RepeatContext) {}
 // ExitRepeat is called when production repeat is exited.
 func (s *BasesimplelangListener) ExitRepeat(ctx *RepeatContext) {}
 
+// EnterCall is called when production call is entered.
+func (s *BasesimplelangListener) EnterCall(ctx *CallContext) {}
+
+// ExitCall is called when production call is exited.
+func (s *BasesimplelangListener) ExitCall(ctx *CallContext) {}
+
+// EnterFunction is called when production function is entered.
+func (s *BasesimplelangListener) EnterFunction(ctx *FunctionContext) {}
+
+// ExitFunction is called when production function is exited.
+func (s *BasesimplelangListener) ExitFunction(ctx *FunctionContext) {}
+
+// EnterFuncName is called when production funcName is entered.
+func (s *BasesimplelangListener) EnterFuncName(ctx *FuncNameContext) {}
+
+// ExitFuncName is called when production funcName is exited.
+func (s *BasesimplelangListener) ExitFuncName(ctx *FuncNameContext) {}
+
+// EnterFBlock is called when production fBlock is entered.
+func (s *BasesimplelangListener) EnterFBlock(ctx *FBlockContext) {}
+
+// ExitFBlock is called when production fBlock is exited.
+func (s *BasesimplelangListener) ExitFBlock(ctx *FBlockContext) {}
+
+// EnterResult is called when production result is entered.
+func (s *BasesimplelangListener) EnterResult(ctx *ResultContext) {}
+
+// ExitResult is called when production result is exited.
+func (s *BasesimplelangListener) ExitResult(ctx *ResultContext) {}
+
 // EnterSingle0 is called when production single0 is entered.
 func (s *BasesimplelangListener) EnterSingle0(ctx *Single0Context) {}
 
