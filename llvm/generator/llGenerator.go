@@ -40,7 +40,7 @@ func (llgen *LLGenerate) LoadInt(value string) {
 
 //LoadDouble llvm
 func (llgen *LLGenerate) LoadDouble(value string) {
-	llgen.BufferText += "%" + strconv.Itoa(llgen.Reg) + " = load double, double* " + value + ")\n"
+	llgen.BufferText += "%" + strconv.Itoa(llgen.Reg) + " = load double, double* " + value + "\n"
 	llgen.Reg++
 }
 
@@ -66,7 +66,7 @@ func (llgen *LLGenerate) PrintfInt(value string) {
 
 //PrintfDouble llvm
 func (llgen *LLGenerate) PrintfDouble(value string) {
-	llgen.BufferText += "%" + strconv.Itoa(llgen.Reg) + " = load double, double* " + value + ")\n"
+	llgen.BufferText += "%" + strconv.Itoa(llgen.Reg) + " = load double, double* " + value + "\n"
 	llgen.Reg++
 	llgen.BufferText += "%" + strconv.Itoa(llgen.Reg) + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpd, i32 0, i32 0), double %" + strconv.Itoa(llgen.Reg-1) + ")\n"
 	llgen.Reg++
@@ -104,7 +104,7 @@ func (llgen *LLGenerate) DeclareInt(variable string, isGlobal bool) {
 //DeclareDouble llvm
 func (llgen *LLGenerate) DeclareDouble(variable string, isGlobal bool) {
 	if isGlobal {
-		llgen.HeaderText += "@" + variable + " = global double 0\n"
+		llgen.HeaderText += "@" + variable + " = global double 0.0\n"
 	} else {
 		llgen.BufferText += "%" + variable + " = alloca double\n"
 	}

@@ -8,7 +8,7 @@ block: ( (stat|function)? NEWLINE )*
 stat:	SHOW ID		#show
 	| ID ASSIGN expr0	#let
 	| READINT ID   	#readint
-    | ID '['(INT)?']' (ASSIGN '{' array_items '}')?          #intarray
+    | ID '['(INT)?']' (ASSIGN '{' array_items '}')?     #intarray
 	| READDOUBLE ID   	#readdouble
 	| SHOWARRAYELEM ID '['(INT)']'   	#showArrayElem
 	| IF equal THEN block ENDIF	#if

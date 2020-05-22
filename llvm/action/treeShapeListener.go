@@ -36,17 +36,22 @@ func NewTreeShapeListener() *TreeShapeListener {
 func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
 	logger.Log.Println("Statment: ", ctx.GetText())
 	variable := ctx.ID().GetText()
+
 	if value, ok := tsl.CalculationsStack.Pop().(util.Value); ok {
 		logger.Log.Println("value: ", value)
+		if tsl.VariableOccupated(util.NewValue(variable, value.VarType)) {
+			tsl.ShowError(ctx.GetStart().GetLine(), "Cannot declare "+variable+" because of previous use:")
+			return
+		}
 		if value.VarType == util.INT {
-			tsl.Llgen.AssignInt(tsl.SetVariable(variable), value.Name)
+			tsl.Llgen.AssignInt(tsl.SetVariable(variable, value.VarType), value.Name)
 		} else if value.VarType == util.REAL {
-			tsl.Llgen.AssignDouble(tsl.SetVariable(variable), value.Name)
+			tsl.Llgen.AssignDouble(tsl.SetVariable(variable, value.VarType), value.Name)
 		} else if value.VarType == util.STRING {
 			tsl.Llgen.DeclareString(variable)
 			tsl.Llgen.AssignString(variable, value.Name, false)
 		} else if value.VarType == util.FUNC {
-			tsl.Llgen.AssignInt(tsl.SetVariable(variable), "%" + value.Name)
+			tsl.Llgen.AssignInt(tsl.SetVariable(variable, util.INT), "%"+value.Name)
 		} else if value.VarType == util.ARRAY {
 			arrayLen := tsl.ArrayName[value.Name]
 			tsl.Llgen.DeclareArrElemInt(variable)
@@ -55,7 +60,9 @@ func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
 		} else {
 			logger.Log.Fatalf("Unknown variable")
 		}
-		tsl.LocalVariables[variable] = value.VarType
+		if tsl.Global {
+			tsl.GlobalVariables[variable] = value.VarType
+		}
 	}
 
 }
@@ -63,24 +70,33 @@ func (tsl *TreeShapeListener) ExitLet(ctx *parser.LetContext) {
 // ExitShow impl
 func (tsl *TreeShapeListener) ExitShow(ctx *parser.ShowContext) {
 	variable := ctx.ID().GetText()
+	logger.Log.Println("variable: ", variable)
 	valueType, found := tsl.LocalVariables[variable]
-	logger.Log.Println("variableMap[variable]: ", tsl.LocalVariables, "variable: ", variable)
+	if found {
+		variable = "%" + variable
+	} else {
+		valueType, found = tsl.GlobalVariables[variable]
+		variable = "@" + variable
+	}
 
 	if found {
-		if valueType == util.INT {
-			tsl.Llgen.LoadInt(tsl.SetVariable(variable))
-			tsl.Llgen.PrintfInt(tsl.SetVariable(variable))
+		if valueType == util.INT || valueType == util.FUNC {
+			tsl.Llgen.PrintfInt(variable)
 		} else if valueType == util.REAL {
-			tsl.Llgen.LoadDouble(tsl.SetVariable(variable))
-			tsl.Llgen.PrintfDouble(tsl.SetVariable(variable))
+			tsl.Llgen.PrintfDouble(variable)
 		} else if valueType == util.STRING {
-
 			tsl.Llgen.PrintfString(variable)
 		} else if valueType == util.UNKNOWN {
-			tsl.Llgen.PrintfInt(variable)
-		} else {
+			tsl.ShowError(ctx.GetStart().GetLine(), "Cannot show "+variable+" because not defined:")
 			logger.Log.Fatalf("Unknown variable")
+		} else {
+			tsl.ShowError(ctx.GetStart().GetLine(), "Cannot show "+variable+" because not defined:")
+			logger.Log.Fatalf("Unknown variable")
+			return
 		}
+	} else {
+		tsl.ShowError(ctx.GetStart().GetLine(), "Cannot show "+variable+" because not defined:")
+		logger.Log.Fatalf("Unknown variable")
 	}
 	logger.Log.Println("Exit ExitShow - variable: ", variable, "valueType: ", valueType.String())
 }
@@ -88,23 +104,22 @@ func (tsl *TreeShapeListener) ExitShow(ctx *parser.ShowContext) {
 // ExitReadint impl
 func (tsl *TreeShapeListener) ExitReadint(ctx *parser.ReadintContext) {
 	variable := ctx.ID().GetText()
-	tsl.LocalVariables[variable] = util.INT
-	tsl.Llgen.ScanfInt(tsl.SetVariable(variable))
+	tsl.Llgen.ScanfInt(tsl.SetVariable(variable, util.INT))
 
-	logger.Log.Println("Exit ExitReadint - variable: ", variable, "type: ", tsl.LocalVariables[variable])
+	logger.Log.Println("Exit ExitReadint - variable: ", variable)
 }
 
 // ExitReaddouble impl
 func (tsl *TreeShapeListener) ExitReaddouble(ctx *parser.ReaddoubleContext) {
 	variable := ctx.ID().GetText()
-	tsl.LocalVariables[variable] = util.REAL
-	tsl.Llgen.ScanfDouble(tsl.SetVariable(variable))
+	tsl.Llgen.ScanfDouble(tsl.SetVariable(variable, util.REAL))
 
 	logger.Log.Println("Exit ExitReadint - variable: ", variable, "type: ", tsl.LocalVariables[variable])
 }
 
 // ExitAdd impl
 func (tsl *TreeShapeListener) ExitAdd(ctx *parser.AddContext) {
+	logger.Log.Println("Stack currnet state: ", tsl.CalculationsStack)
 	val1 := tsl.CalculationsStack.Pop().(util.Value)
 	val2 := tsl.CalculationsStack.Pop().(util.Value)
 	if val1.VarType == val2.VarType {
@@ -182,19 +197,19 @@ func (tsl *TreeShapeListener) ExitDiv(ctx *parser.DivContext) {
 // ExitInt impl
 func (tsl *TreeShapeListener) ExitInt(ctx *parser.IntContext) {
 	tsl.CalculationsStack.Push(util.NewValue(ctx.INT().GetText(), util.INT))
-	logger.Log.Println("ExitInt - int pushed on tsl.CalculationsStack")
+	logger.Log.Println("ExitInt - int pushed on tsl.CalculationsStack", tsl.CalculationsStack)
 }
 
 // ExitReal impl
 func (tsl *TreeShapeListener) ExitReal(ctx *parser.RealContext) {
 	tsl.CalculationsStack.Push(util.NewValue(ctx.REAL().GetText(), util.REAL))
-	logger.Log.Println("ExitReal - real pushed on tsl.CalculationsStack")
+	logger.Log.Println("ExitReal - real pushed on tsl.CalculationsStack", tsl.CalculationsStack)
 }
 
 // ExitString impl
 func (tsl *TreeShapeListener) ExitString(ctx *parser.StringContext) {
 	tsl.CalculationsStack.Push(util.NewValue(ctx.STRING().GetText(), util.STRING))
-	logger.Log.Println("ExitString - string pushed on tsl.CalculationsStack")
+	logger.Log.Println("ExitString - string pushed on tsl.CalculationsStack", tsl.CalculationsStack)
 }
 
 // ExitToint impl
@@ -203,7 +218,7 @@ func (tsl *TreeShapeListener) ExitToint(ctx *parser.TointContext) {
 	tsl.Llgen.Fptosi(value.Name)
 	tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.INT))
 
-	logger.Log.Println("ExitReal - value: ", value, " is now int")
+	logger.Log.Println("ExitReal - value: ", value, " is now int", tsl.CalculationsStack)
 }
 
 // ExitToreal impl
@@ -211,7 +226,7 @@ func (tsl *TreeShapeListener) ExitToreal(ctx *parser.TorealContext) {
 	value := tsl.CalculationsStack.Pop().(util.Value)
 	tsl.Llgen.Sitofp(value.Name)
 	tsl.CalculationsStack.Push(util.NewValue("%"+strconv.Itoa(tsl.Llgen.Reg-1), util.REAL))
-	logger.Log.Println("ExitToreal - value: ", value, " is now real")
+	logger.Log.Println("ExitToreal - value: ", value, " is now real", tsl.CalculationsStack)
 }
 
 // ExitIntarray impl
@@ -223,9 +238,6 @@ func (tsl *TreeShapeListener) ExitIntarray(ctx *parser.IntarrayContext) {
 		for _, elem := range arrayElem.AllINT() {
 			elems = append(elems, elem.GetText())
 		}
-		logger.Log.Println("ExitIntarray: ", elems[0])
-		logger.Log.Println("ExitIntarray: ", elems[1])
-
 		tsl.Llgen.DeclareIntArray(variable, elems)
 		tsl.ArrayName[variable] = strconv.Itoa(len(elems))
 	}
@@ -243,7 +255,6 @@ func (tsl *TreeShapeListener) ExitShowArrayElem(ctx *parser.ShowArrayElemContext
 			tsl.Llgen.PrintfArrElemInt(variable, valueElem, arrayLen)
 		} else {
 			logger.Log.Fatalf("Unknown variable")
-			panic("Unknown variable")
 		}
 		logger.Log.Println("variable, valueElem, arrayLen -> ", variable, valueElem, arrayLen)
 	}
@@ -269,7 +280,7 @@ func (tsl *TreeShapeListener) ExitAssignArrayElem(ctx *parser.AssignArrayElemCon
 		}
 		logger.Log.Println("ExitAssignArrayElem variable, valueElem, arrayLen -> ", variable, valueElem, arrayLen)
 	} else {
-		showError(ctx.GetStart().GetLine(), "variable not found"+variable)
+		tsl.ShowError(ctx.GetStart().GetLine(), "variable not found"+variable)
 	}
 }
 
@@ -298,11 +309,14 @@ func (tsl *TreeShapeListener) EnterBlock(ctx *parser.BlockContext) {
 func (tsl *TreeShapeListener) ExitEqual(ctx *parser.EqualContext) {
 	id := ctx.ID().GetText()
 	value := ctx.INT().GetText()
-	_, found := tsl.LocalVariables[id]
+	valueType, found := tsl.LocalVariables[id]
+	if found == false {
+		valueType, found = tsl.GlobalVariables[id]
+	}
 
 	if found {
-		tsl.Llgen.LoadInt(tsl.SetVariable(id))
-		tsl.Llgen.Icmp(tsl.SetVariable(id), value)
+		tsl.Llgen.LoadInt(tsl.SetVariable(id, valueType))
+		tsl.Llgen.Icmp(tsl.SetVariable(id, valueType), value)
 	} else {
 		logger.Log.Println("ExitEqual not found variable")
 
@@ -316,7 +330,7 @@ func (tsl *TreeShapeListener) ExitEqual(ctx *parser.EqualContext) {
 
 // ExitBlock impl
 func (tsl *TreeShapeListener) ExitBlock(ctx *parser.BlockContext) {
-	// logger.Log.Println("ExitBlock enter", ctx.GetText())
+	logger.Log.Println("ExitBlock enter", ctx.GetText())
 	// logger.Log.Println("ExitBlock parent ", ctx.GetTypedRuleContexts(reflect.TypeOf(parser.RepetitionsContext)))
 
 	if _, ok := ctx.GetParent().(*parser.RepeatContext); ok {
@@ -337,21 +351,23 @@ func (tsl *TreeShapeListener) ExitBlock(ctx *parser.BlockContext) {
 func (tsl *TreeShapeListener) ExitRepetitions(ctx *parser.RepetitionsContext) {
 	variable := ctx.GetText()
 	valueType, found := tsl.LocalVariables[variable]
+
 	logger.Log.Println("variableMap[variable]: ", tsl.LocalVariables, "variable: ", variable, "len(variableMap, ", len(tsl.LocalVariables), "is found? :", found)
 	if found {
 		if valueType == util.INT {
-			tsl.Llgen.StartLoop(tsl.SetVariable(variable))
+			tsl.Llgen.StartLoop(tsl.SetVariable(variable, valueType))
 
 		}
 	} else {
 		repCounter, err := strconv.Atoi(variable)
 		if err != nil {
-			showError(ctx.GetStart().GetLine(), "variable not int "+variable)
+			tsl.ShowError(ctx.GetStart().GetLine(), "variable not int "+variable)
 		}
 		valueName := "repCounter" + strconv.Itoa(repCounter+len(tsl.LocalVariables))
-		tsl.Llgen.DeclareInt(valueName, tsl.Global)
-		tsl.Llgen.AssignInt(valueName, variable)
-		tsl.Llgen.StartLoop(tsl.SetVariable(variable))
+		tsl.Llgen.DeclareInt(valueName, false)
+		tsl.Llgen.AssignInt("%"+valueName, variable)
+
+		tsl.Llgen.StartLoop("%" + valueName)
 
 	}
 
@@ -373,7 +389,28 @@ func (tsl *TreeShapeListener) ExitProg(ctx *parser.ProgContext) {
 	logger.Log.Println("ExitProg low-level code file generated")
 }
 
-// TODO error line number
-func showError(line int, msg string) {
+// ShowError error line number
+func (tsl *TreeShapeListener) ShowError(line int, msg string) {
 	fmt.Println("Error, line ", line, ", "+msg)
+}
+
+// VariableOccupated status
+func (tsl *TreeShapeListener) VariableOccupated(value util.Value) bool {
+	logger.Log.Println("Value: ", value)
+	logger.Log.Println("GlobalVariables: ", tsl.GlobalVariables)
+	logger.Log.Println("LocalVariables: ", tsl.LocalVariables)
+	logger.Log.Println("FunctionVariables: ", tsl.FunctionVariables)
+
+	_, foundG := tsl.GlobalVariables[value.Name]
+	// _, foundF := tsl.FunctionVariables[value.Name]
+	_, foundL := tsl.LocalVariables[value.Name]
+
+	if (foundG) && tsl.Global {
+		logger.Log.Println("Found in @ variables")
+		return true
+	} else if foundL && tsl.Global == false {
+		logger.Log.Println("Found in % variables")
+		return true
+	}
+	return false
 }
