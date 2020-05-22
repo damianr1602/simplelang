@@ -2,7 +2,7 @@ grammar simplelang;
 
 prog: block;
 
-block: ( (stat|function)? NEWLINE )* 
+block: ( (stat|function|structure)? NEWLINE )* 
 ;
 
 stat:	SHOW ID		#show
@@ -16,8 +16,21 @@ stat:	SHOW ID		#show
 	| ID	#call
    ;
 
+structure: STRUCT structName sBlock ENDSTRUCT
+;
+sBlock: ID (';' ID )*
+;
+STRUCT: 'struct'
+;
+structName: ID 
+;
+ENDSTRUCT: 'endstruct'
+;
+
 function: FUNC funcName fBlock result? ENDFUNC
 ;
+
+
 FUNC: 'func'
 ;
 

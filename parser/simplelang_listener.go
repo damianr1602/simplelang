@@ -41,6 +41,15 @@ type simplelangListener interface {
 	// EnterCall is called when entering the call production.
 	EnterCall(c *CallContext)
 
+	// EnterStructure is called when entering the structure production.
+	EnterStructure(c *StructureContext)
+
+	// EnterSBlock is called when entering the sBlock production.
+	EnterSBlock(c *SBlockContext)
+
+	// EnterStructName is called when entering the structName production.
+	EnterStructName(c *StructNameContext)
+
 	// EnterFunction is called when entering the function production.
 	EnterFunction(c *FunctionContext)
 
@@ -136,6 +145,15 @@ type simplelangListener interface {
 
 	// ExitCall is called when exiting the call production.
 	ExitCall(c *CallContext)
+
+	// ExitStructure is called when exiting the structure production.
+	ExitStructure(c *StructureContext)
+
+	// ExitSBlock is called when exiting the sBlock production.
+	ExitSBlock(c *SBlockContext)
+
+	// ExitStructName is called when exiting the structName production.
+	ExitStructName(c *StructNameContext)
 
 	// ExitFunction is called when exiting the function production.
 	ExitFunction(c *FunctionContext)

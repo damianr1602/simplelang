@@ -87,6 +87,24 @@ func (s *BasesimplelangListener) EnterCall(ctx *CallContext) {}
 // ExitCall is called when production call is exited.
 func (s *BasesimplelangListener) ExitCall(ctx *CallContext) {}
 
+// EnterStructure is called when production structure is entered.
+func (s *BasesimplelangListener) EnterStructure(ctx *StructureContext) {}
+
+// ExitStructure is called when production structure is exited.
+func (s *BasesimplelangListener) ExitStructure(ctx *StructureContext) {}
+
+// EnterSBlock is called when production sBlock is entered.
+func (s *BasesimplelangListener) EnterSBlock(ctx *SBlockContext) {}
+
+// ExitSBlock is called when production sBlock is exited.
+func (s *BasesimplelangListener) ExitSBlock(ctx *SBlockContext) {}
+
+// EnterStructName is called when production structName is entered.
+func (s *BasesimplelangListener) EnterStructName(ctx *StructNameContext) {}
+
+// ExitStructName is called when production structName is exited.
+func (s *BasesimplelangListener) ExitStructName(ctx *StructNameContext) {}
+
 // EnterFunction is called when production function is entered.
 func (s *BasesimplelangListener) EnterFunction(ctx *FunctionContext) {}
 
